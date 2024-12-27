@@ -41,34 +41,13 @@ function ConsumptionTable({data, displayUnits='kWh'}){
     */
         
     var tableData = {};
-    tableData.head = ['Date', `Consumption (${displayUnits})`];
-    tableData.data = [];
+    console.log("data is")
+    console.log(data.billTable);
 
-    console.log(data);
-
-    //sort data by ascending epoch
-    var sortedData = data.sort((a, b) => a[2] - b[2]);
-    console.log(sortedData)
-
-    sortedData.forEach(row => {
-        var date = epoch2Date(row[2]);
-
-        if(displayUnits === 'kWh')
-            var consumption = (row[5]/1_000).toFixed(2); //convert to kWh
-        else if(displayUnits === 'Wh')
-            var consumption = row[5].toFixed(2); //convert to Wh
-        else {
-            console.log("Invalid display units, defaulting to Wh")
-            var consumption = row[5].toFixed(2); 
-        }
-        
-        tableData.data.push([date, consumption]);
-    });
-
-    // //take only the energy and timestamp
-    // sortedData = sortedData.map(row => [row[2], row[5]]);
-    console.log("sortedData is")
-    console.log(sortedData);
+    tableData.head = Object.keys(data.billTable[0]);
+    let _tmp = data.billTable.slice(0, data.billTable.length-1);
+    tableData.data = _tmp.map(row => Object.values(row));
+    tableData.data.push(["Total (Rs)", "", "", data.billTable[data.billTable.length-1].total]);
 
     return(
         <Table>
@@ -126,15 +105,22 @@ export default function Dashboard({navigation, route}) {
 
         ////log-data/ranged/:deviceID/:epochStart/:epochEnd
 
-        var path = `${apiRoute}/log-data/ranged/${meterID}/${epochTwoMonthsAgo}/${epochNow}`
+        var path = `${apiRoute}/bill/${meterID}/${epochTwoMonthsAgo}/${epochNow}`
+
         var authObject = {meterID, password}
         GetFromAPI(path, authObject);
     }
 
-    const GetAllTimeConsumptionClickHandler = () => {
+    const Get1MonthsConsumptionClickHandler = () => {
         // get all time consumption
-        console.log("All time consumption")
-        var path = `${apiRoute}/log-data/${meterID}`
+        console.log("Last 1 month consumption")
+        const epochNow = Date.now()
+        const epochTwoMonthsAgo = epochNow - 1000*60*60*24*30;
+
+        ////log-data/ranged/:deviceID/:epochStart/:epochEnd
+
+        var path = `${apiRoute}/bill/${meterID}/${epochTwoMonthsAgo}/${epochNow}`
+
         var authObject = {meterID, password}
         GetFromAPI(path, authObject);
     }
@@ -172,8 +158,8 @@ export default function Dashboard({navigation, route}) {
                 <ButtonAnimatedWithLabel 
                     style={styles.ButtonStyle} 
                     styleText={styles.ButtonTextStyle} 
-                    label="All Time Consumption" 
-                    onPress={GetAllTimeConsumptionClickHandler}
+                    label="Last 1 month Consumption" 
+                    onPress={Get1MonthsConsumptionClickHandler}
                 />
 
                 {/* <ButtonAnimatedWithLabel style={styles.ButtonStyle} label="Average" onPress={() => console.log("Average consumption")}/> */}
@@ -190,6 +176,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
         alignItems: 'center',
+        width: windowWidth,
     },
     title: {
         fontSize: 20,
